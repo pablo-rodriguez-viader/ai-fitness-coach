@@ -30,7 +30,7 @@ struct GoalsView: View {
                         InlineErrorView(
                             message: error,
                             retryTitle: "Volver a cargar",
-                            retry: viewModel.loadFailed ? viewModel.load : nil)
+                            retry: viewModel.loadFailed ? { viewModel.load() } : nil)
                     }
                 }
                 Section("Tus objetivos") {
