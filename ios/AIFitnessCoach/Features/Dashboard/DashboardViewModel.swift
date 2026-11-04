@@ -85,7 +85,7 @@ final class DashboardViewModel: ObservableObject {
         guard connectionState == .connected else { return }
         refreshTask?.cancel()
         summaryState = .loading
-        refreshTask = Task { [weak self] in
+        refreshTask = Task { [weak self] () -> Void in
             await self?.loadSummary()
         }
     }
@@ -193,8 +193,10 @@ final class DashboardViewModel: ObservableObject {
 
     private func refreshFromObserver() async {
         refreshTask?.cancel()
-        let task = Task { [weak self] in
-            await self?.loadSummary()
+        // `self?.` makes the closure return `()?`; the stored task is `Task<Void, Never>`.
+        let task = Task { [weak self] () -> Void in
+            guard let self else { return }
+            await self.loadSummary()
         }
         refreshTask = task
         await task.value
