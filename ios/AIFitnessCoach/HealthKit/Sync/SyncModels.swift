@@ -174,7 +174,7 @@ struct HealthSyncJob: Codable, Equatable, Identifiable, Sendable {
         }
         deviceId = try container.decodeIfPresent(String.self, forKey: .deviceId) ?? "legacy-device"
         let storedUserId = try container.decodeIfPresent(String.self, forKey: .userId)
-        userId = storedUserId ?? (try container.decodeIfPresent(String.self, forKey: .ownerUserId))
+        userId = try storedUserId ?? container.decodeIfPresent(String.self, forKey: .ownerUserId)
         attemptCount = try container.decodeIfPresent(Int.self, forKey: .attemptCount) ?? 0
         nextAttemptAt = try container.decodeIfPresent(Date.self, forKey: .nextAttemptAt)
         lastError = try container.decodeIfPresent(String.self, forKey: .lastError)
