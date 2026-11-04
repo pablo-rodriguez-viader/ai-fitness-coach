@@ -90,10 +90,7 @@ internal static class InitialHealthDataModel
     {
         modelBuilder.Entity("AIFitnessCoach.Domain.Entities.HealthMetric", entity =>
         {
-            entity.HasIndex("UserId", "Metric", "ObservedAt")
-                .HasDatabaseName("ix_health_metrics_user_id_metric_observed_at");
-            entity.HasIndex("UserId", "ObservedAt")
-                .HasDatabaseName("ix_health_metrics_user_id_observed_at");
+            // Properties first: an index on a property not declared yet cannot be built.
             entity.Property<Guid>("Id").HasColumnType("uuid").HasColumnName("id");
             entity.Property<DateTimeOffset>("CreatedAt").HasColumnType("timestamp with time zone").HasColumnName("created_at");
             entity.Property<string>("Metric").IsRequired().HasMaxLength(48).HasColumnType("character varying(48)").HasColumnName("metric");
@@ -101,6 +98,10 @@ internal static class InitialHealthDataModel
             entity.Property<string>("Unit").IsRequired().HasMaxLength(24).HasColumnType("character varying(24)").HasColumnName("unit");
             entity.Property<string>("UserId").IsRequired().HasMaxLength(128).HasColumnType("character varying(128)").HasColumnName("user_id");
             entity.Property<double>("Value").HasPrecision(16, 4).HasColumnType("double precision").HasColumnName("value");
+            entity.HasIndex("UserId", "Metric", "ObservedAt")
+                .HasDatabaseName("ix_health_metrics_user_id_metric_observed_at");
+            entity.HasIndex("UserId", "ObservedAt")
+                .HasDatabaseName("ix_health_metrics_user_id_observed_at");
             entity.HasKey("Id").HasName("pk_health_metrics");
             entity.ToTable("health_metrics", table =>
             {
@@ -109,7 +110,6 @@ internal static class InitialHealthDataModel
         });
         modelBuilder.Entity("AIFitnessCoach.Domain.Entities.UserProfile", entity =>
         {
-            entity.HasIndex("UpdatedAt").HasDatabaseName("ix_user_profiles_updated_at");
             entity.Property<string>("UserId").IsRequired().HasMaxLength(128).HasColumnType("character varying(128)").HasColumnName("user_id");
             entity.Property<int>("Age").HasColumnType("integer").HasColumnName("age");
             entity.Property<DateTimeOffset>("CreatedAt").HasColumnType("timestamp with time zone").HasColumnName("created_at");
@@ -117,6 +117,7 @@ internal static class InitialHealthDataModel
             entity.Property<string>("Goal").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("goal");
             entity.Property<double>("HeightCentimeters").HasPrecision(6, 2).HasColumnType("double precision").HasColumnName("height_centimeters");
             entity.Property<DateTimeOffset>("UpdatedAt").HasColumnType("timestamp with time zone").HasColumnName("updated_at");
+            entity.HasIndex("UpdatedAt").HasDatabaseName("ix_user_profiles_updated_at");
             entity.HasKey("UserId").HasName("pk_user_profiles");
             entity.ToTable("user_profiles", table =>
             {

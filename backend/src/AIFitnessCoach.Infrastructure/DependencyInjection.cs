@@ -18,12 +18,18 @@ public static class DependencyInjection
     {
         // Transient failures (failover, restarts, dropped connections) are retried instead of
         // surfacing as 500s. Explicit transactions must run inside the execution strategy.
-        services.AddDbContext<FitnessDbContext>(options => options.UseNpgsql(
-            connectionString,
-            npgsql => npgsql.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(5),
-                errorCodesToAdd: null)));
+        services.AddDbContext<FitnessDbContext>(options => options
+            .UseNpgsql(
+                connectionString,
+                npgsql => npgsql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorCodesToAdd: null))
+            // Migrations are written by hand and their snapshot is built from the same model
+            // configuration without provider conventions, so EF's "pending model changes" check
+            // always fires and would block every migration at startup.
+            .ConfigureWarnings(warnings => warnings.Ignore(
+                Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
         services.AddHttpClient<OpenAIClient>(client => client.Timeout = TimeSpan.FromSeconds(60));
         // Every AI call goes through the circuit breaker (one per process).
         services.AddSingleton<AICircuitBreaker>();

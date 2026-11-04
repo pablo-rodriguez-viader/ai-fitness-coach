@@ -1,0 +1,7 @@
+# Build output from the host (Windows obj/ points to Windows NuGet folders and breaks the
+# restore done inside the container).
+**/bin/
+**/obj/
+**/*.user
+**/.vs/
+tests/
