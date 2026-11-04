@@ -63,10 +63,13 @@ public sealed class ArchitectureTests
             : Path.Combine(root, "backend", "src", projectName);
         var projectPath = Path.Combine(projectDirectory, $"{projectName}.csproj");
         var xml = XDocument.Load(projectPath);
+        // Include paths use Windows separators ("..\X\X.csproj"); on Linux "\" is not a
+        // separator, so normalise before taking the file name.
         return xml.Descendants("ProjectReference")
             .Select(reference => Path.GetFileNameWithoutExtension(
-                reference.Attribute("Include")?.Value
-                ?? throw new InvalidDataException("Project reference has no Include path.")))
+                (reference.Attribute("Include")?.Value
+                    ?? throw new InvalidDataException("Project reference has no Include path."))
+                .Replace('\\', '/')))
             .Order(StringComparer.Ordinal)
             .ToArray();
     }

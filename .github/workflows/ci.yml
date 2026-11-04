@@ -30,16 +30,16 @@ jobs:
         run: xcodegen generate
       - name: Build iOS simulator target
         working-directory: ios
-        run: xcodebuild -project AIFitnessCoach.xcodeproj -scheme AIFitnessCoach -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+        run: bash scripts/ci-run.sh build-debug xcodebuild -project AIFitnessCoach.xcodeproj -scheme AIFitnessCoach -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build
       - name: Build Beta configuration (TestFlight)
         working-directory: ios
-        run: xcodebuild -project AIFitnessCoach.xcodeproj -scheme "AIFitnessCoach Beta" -configuration Beta -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO API_BASE_URL=https://ci.invalid build
+        run: bash scripts/ci-run.sh build-beta xcodebuild -project AIFitnessCoach.xcodeproj -scheme "AIFitnessCoach Beta" -configuration Beta -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO API_BASE_URL=https://ci.invalid build
       - name: Build Personal configuration (free Apple ID)
         working-directory: ios
-        run: xcodebuild -project AIFitnessCoach.xcodeproj -scheme "AIFitnessCoach Personal" -configuration Personal -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO API_BASE_URL=https://ci.invalid build
+        run: bash scripts/ci-run.sh build-personal xcodebuild -project AIFitnessCoach.xcodeproj -scheme "AIFitnessCoach Personal" -configuration Personal -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO API_BASE_URL=https://ci.invalid build
       - name: Check privacy manifest is bundled
         working-directory: ios
         run: grep -q "PrivacyInfo.xcprivacy" AIFitnessCoach.xcodeproj/project.pbxproj
       - name: Run iOS unit tests
         working-directory: ios
-        run: xcodebuild test -project AIFitnessCoach.xcodeproj -scheme AIFitnessCoach -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO
+        run: bash scripts/ci-run.sh test xcodebuild test -project AIFitnessCoach.xcodeproj -scheme AIFitnessCoach -destination "platform=iOS Simulator,name=iPhone 16" CODE_SIGNING_ALLOWED=NO
