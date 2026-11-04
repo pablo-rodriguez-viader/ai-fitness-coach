@@ -208,12 +208,13 @@ actor HealthSyncCoordinator {
         guard let error else { return false }
         switch error {
         case .unauthorized, .accountMismatch:
-            true
+            return true
         case let .server(statusCode):
-            // 403: token and batch owner disagree. 404: wrong base URL. Neither is the data's fault.
-            statusCode == 403 || statusCode == 404
+            // 403: token and batch owner disagree, or no health-data consent. 404: wrong base URL.
+            // Neither is the data's fault.
+            return statusCode == 403 || statusCode == 404
         default:
-            false
+            return false
         }
     }
 
