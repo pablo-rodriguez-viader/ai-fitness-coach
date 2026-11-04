@@ -1,0 +1,14 @@
+// Settings shared by every build configuration.
+// Override any value on the command line, e.g. xcodebuild APP_BUNDLE_ID=com.yourteam.aicoach
+// (ios/scripts/testflight.sh does this from environment variables).
+
+// Real App ID with HealthKit (+ background delivery) and Sign in with Apple. The same ID is used
+// for TestFlight and the App Store: a TestFlight build is a build of the App Store app.
+APP_BUNDLE_ID = com.example.aifitnesscoach
+
+MARKETING_VERSION = 0.9.0
+// Must grow on every upload; the script passes a timestamp or $GITHUB_RUN_NUMBER.
+CURRENT_PROJECT_VERSION = 1
+
+// xcconfig treats "//" as a comment: write URLs as https:/$()/host
+API_BASE_URL =

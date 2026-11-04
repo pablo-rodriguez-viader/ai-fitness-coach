@@ -1,0 +1,47 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=aifitness;Username=aifitness;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+      Jwt__SigningKeyBase64: ${JWT_SIGNING_KEY_BASE64:?Set JWT_SIGNING_KEY_BASE64}
+      Apple__Audience: ${APPLE_AUDIENCE:?Set APPLE_AUDIENCE to the iOS bundle id}
+      AI__Enabled: ${AI_ENABLED:-false}
+      Analytics__AdminApiKey: ${ANALYTICS_ADMIN_API_KEY:-}
+      AI__ApiKey: ${OPENAI_API_KEY:-}
+      AI__Model: ${AI_MODEL:-gpt-4o-mini}
+      AI__InputCostPerMillionTokens: ${AI_INPUT_COST_PER_MILLION_TOKENS:-0}
+      AI__OutputCostPerMillionTokens: ${AI_OUTPUT_COST_PER_MILLION_TOKENS:-0}
+      # Personal use: BETA_MAX_USERS=1 so nobody else can create an account through the public URL.
+      Beta__MaxUsers: ${BETA_MAX_USERS:-0}
+      # Free install without Sign in with Apple: secret code (24+ characters) to open your account.
+      Auth__PersonalAccessCode: ${PERSONAL_ACCESS_CODE:-}
+      Release__Environment: ${RELEASE_ENVIRONMENT:-beta}
+      Apple__TeamId: ${APPLE_TEAM_ID:-}
+      Apple__KeyId: ${APPLE_SIGN_IN_KEY_ID:-}
+      Apple__PrivateKey: ${APPLE_SIGN_IN_PRIVATE_KEY:-}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aifitness
+      POSTGRES_USER: aifitness
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aifitness -d aifitness"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:

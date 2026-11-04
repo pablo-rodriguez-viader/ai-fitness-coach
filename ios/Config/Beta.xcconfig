@@ -1,0 +1,7 @@
+#include "Shared.xcconfig"
+
+// Private beta distributed with TestFlight. Release optimisations, beta backend, BETA flag.
+// Set the beta API (HTTPS) here or pass API_BASE_URL to xcodebuild / testflight.sh.
+APP_ENVIRONMENT = beta
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = BETA
+// API_BASE_URL = https:/$()/api-beta.yourdomain.com

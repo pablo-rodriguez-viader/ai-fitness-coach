@@ -1,0 +1,60 @@
+name: TestFlight Beta
+
+# Manual, or on a tag like beta-1.0.0-3. Uploads the Beta configuration to TestFlight.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["beta-*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test backend/tests/AIFitnessCoach.Api.Tests/AIFitnessCoach.Api.Tests.csproj --configuration Release
+
+  testflight:
+    needs: backend
+    runs-on: macos-15
+    environment: testflight
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Write App Store Connect API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey.p8"
+      - name: Build, test and upload
+        working-directory: ios
+        env:
+          API_BASE_URL: ${{ vars.BETA_API_BASE_URL }}
+          APP_BUNDLE_ID: ${{ vars.APP_BUNDLE_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ runner.temp }}/asc/AuthKey.p8
+          BUILD_NUMBER: ${{ github.run_number }}${{ github.run_attempt }}
+        run: ./scripts/testflight.sh
+      - name: Keep the archive log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testflight-logs
+          path: ios/build/testflight/*.log
+          if-no-files-found: ignore
+      - name: Remove API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"

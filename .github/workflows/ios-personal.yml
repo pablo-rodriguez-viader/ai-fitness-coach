@@ -1,0 +1,101 @@
+name: iOS Personal (Sideloadly)
+
+# Builds the Personal configuration (free Apple ID: access-code login, no Sign in with Apple)
+# and publishes an .ipa to install with Sideloadly or AltStore. No Apple account or secrets
+# needed here: Sideloadly signs the app with your free Apple ID on your PC.
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "HTTPS URL of your backend (e.g. https://tu-nombre.ngrok-free.app)"
+        required: true
+      bundle_id:
+        description: "Unique bundle id (e.g. com.tunombre.aicoach). Do not use com.example."
+        required: true
+      run_tests:
+        description: "Run the iOS unit tests first"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check inputs
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          APP_BUNDLE_ID: ${{ inputs.bundle_id }}
+        run: |
+          [[ "$API_BASE_URL" == https://* ]] || { echo "::error::api_base_url must start with https://"; exit 1; }
+          [[ "$APP_BUNDLE_ID" =~ ^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]] || { echo "::error::bundle_id is not a valid bundle id"; exit 1; }
+          [[ "$APP_BUNDLE_ID" != com.example.* ]] || { echo "::error::bundle_id still uses com.example"; exit 1; }
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Run iOS unit tests
+        if: ${{ inputs.run_tests }}
+        working-directory: ios
+        run: |
+          xcodebuild test -project AIFitnessCoach.xcodeproj -scheme AIFitnessCoach \
+            -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO \
+            > test.log 2>&1 || { grep -E "error:|failed" test.log | tail -60; exit 1; }
+          grep -E "Executed [0-9]+ tests" test.log | tail -1
+
+      - name: Build for iPhone (unsigned)
+        working-directory: ios
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          APP_BUNDLE_ID: ${{ inputs.bundle_id }}
+        run: |
+          xcodebuild build \
+            -project AIFitnessCoach.xcodeproj \
+            -scheme "AIFitnessCoach Personal" \
+            -configuration Personal \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            APP_BUNDLE_ID="$APP_BUNDLE_ID" \
+            API_BASE_URL="$API_BASE_URL" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            > build.log 2>&1 || { grep -E "error:" build.log | tail -60; exit 1; }
+
+      - name: Package .ipa
+        working-directory: ios
+        run: |
+          APP="$(find build/dd/Build/Products/Personal-iphoneos -maxdepth 1 -name '*.app' | head -1)"
+          [[ -d "$APP" ]] || { echo "::error::App bundle not found"; exit 1; }
+          # Ad-hoc signature carrying the HealthKit entitlement; Sideloadly re-signs it with your Apple ID.
+          codesign --force --sign - \
+            --entitlements AIFitnessCoach/Resources/AIFitnessCoach.Personal.entitlements "$APP"
+          rm -rf build/Payload && mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+          (cd build && zip -qry "AIFitnessCoach-Personal-${{ github.run_number }}.ipa" Payload)
+          ls -la build/*.ipa
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: AIFitnessCoach-Personal-${{ github.run_number }}
+          path: ios/build/*.ipa
+          retention-days: 30
+
+      - name: Keep logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-personal-logs-${{ github.run_number }}
+          path: |
+            ios/test.log
+            ios/build.log
+          if-no-files-found: ignore

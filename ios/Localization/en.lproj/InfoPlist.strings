@@ -1,0 +1,4 @@
+/* English. Move this folder into AIFitnessCoach/Resources only when the whole UI is translated:
+   an en.lproj folder makes the App Store list English as a supported language. */
+"CFBundleDisplayName" = "AI Coach";
+"NSHealthShareUsageDescription" = "AI Coach reads your steps, active and resting energy, heart rate, weight, sleep and workouts from Health to show your daily summary and progress, estimate your nutrition targets and, if you allow it, personalise your plans and the Coach's answers. This data is never used for advertising or sold.";

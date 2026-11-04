@@ -1,0 +1,10 @@
+#include "Shared.xcconfig"
+
+// Free personal install (free Apple ID + Sideloadly/AltStore). No Sign in with Apple and no
+// HealthKit background delivery: a free Apple ID cannot sign those entitlements.
+// - Login with the access code set as PERSONAL_ACCESS_CODE on your backend.
+// - Health data syncs when the app is opened or comes back to the foreground.
+// The workflow "iOS Personal (Sideloadly)" passes API_BASE_URL and APP_BUNDLE_ID.
+APP_ENVIRONMENT = personal
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = PERSONAL_SIGN_IN NO_HEALTHKIT_BACKGROUND_DELIVERY
+// API_BASE_URL = https:/$()/tu-nombre.ngrok-free.app

@@ -1,0 +1,5 @@
+#include "Shared.xcconfig"
+
+// Local development. HTTP is accepted only for localhost/127.0.0.1 in DEBUG builds.
+APP_ENVIRONMENT = development
+API_BASE_URL = http:/$()/localhost:8080

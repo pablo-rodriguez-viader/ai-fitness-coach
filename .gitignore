@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+*.user
+*.suo
+DerivedData/
+*.xcuserstate
+xcuserdata/
+AIFitnessCoach.xcodeproj/
+.env
+ios/build/
+*.p8

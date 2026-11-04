@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test backend/tests/AIFitnessCoach.Api.Tests/AIFitnessCoach.Api.Tests.csproj --configuration Release
+      - run: docker build --file backend/Dockerfile backend
+
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Build iOS simulator target
+        working-directory: ios
+        run: xcodebuild -project AIFitnessCoach.xcodeproj -scheme AIFitnessCoach -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+      - name: Build Beta configuration (TestFlight)
+        working-directory: ios
+        run: xcodebuild -project AIFitnessCoach.xcodeproj -scheme "AIFitnessCoach Beta" -configuration Beta -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO API_BASE_URL=https://ci.invalid build
+      - name: Build Personal configuration (free Apple ID)
+        working-directory: ios
+        run: xcodebuild -project AIFitnessCoach.xcodeproj -scheme "AIFitnessCoach Personal" -configuration Personal -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO API_BASE_URL=https://ci.invalid build
+      - name: Check privacy manifest is bundled
+        working-directory: ios
+        run: grep -q "PrivacyInfo.xcprivacy" AIFitnessCoach.xcodeproj/project.pbxproj
+      - name: Run iOS unit tests
+        working-directory: ios
+        run: xcodebuild test -project AIFitnessCoach.xcodeproj -scheme AIFitnessCoach -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO
