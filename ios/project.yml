@@ -70,6 +70,10 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).tests
+        # The app product is "AI Fitness Coach.app" (PRODUCT_NAME has spaces); XcodeGen's default
+        # test host uses the target name, which does not exist.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/AI Fitness Coach.app/AI Fitness Coach"
+        BUNDLE_LOADER: "$(TEST_HOST)"
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "1"
