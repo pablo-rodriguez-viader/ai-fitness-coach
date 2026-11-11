@@ -218,7 +218,7 @@ public sealed class ReleaseCandidateTests
         Assert.Equal(
             [
                 "/api/v1/analytics/product", "/api/v1/app-config", "/api/v1/auth/apple", "/api/v1/auth/personal",
-                "/api/v1/auth/refresh", "/api/v1/auth/revoke", "/api/v1/support/reports",
+                "/api/v1/auth/refresh", "/api/v1/auth/revoke", "/api/v1/health/shortcut", "/api/v1/support/reports",
                 "/health", "/health/live", "/health/ready"
             ],
             anonymous);

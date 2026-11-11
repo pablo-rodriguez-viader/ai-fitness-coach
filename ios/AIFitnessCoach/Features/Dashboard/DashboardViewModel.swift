@@ -81,7 +81,29 @@ final class DashboardViewModel: ObservableObject {
         }
     }
 
+    /// Personal build (free Apple ID): the app has no HealthKit entitlement, so Apple Health data
+    /// reaches the server through an iOS Shortcut and the dashboard only reads the server summary.
+    #if PERSONAL_SIGN_IN
+    static let usesShortcutHealthData = true
+    #else
+    static let usesShortcutHealthData = false
+    #endif
+
+    /// Shortcut mode: loads today's summary from the server, no HealthKit involved.
+    func loadShortcutSummary() {
+        guard Self.usesShortcutHealthData else { return }
+        refreshTask?.cancel()
+        refreshTask = Task { [weak self] () -> Void in
+            await self?.loadSummary()
+        }
+    }
+
     func refresh() {
+        if Self.usesShortcutHealthData {
+            summaryState = .loading
+            loadShortcutSummary()
+            return
+        }
         guard connectionState == .connected else { return }
         refreshTask?.cancel()
         summaryState = .loading

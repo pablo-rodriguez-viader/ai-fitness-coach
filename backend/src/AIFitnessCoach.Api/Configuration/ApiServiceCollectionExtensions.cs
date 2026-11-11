@@ -61,6 +61,8 @@ public static class ApiServiceCollectionExtensions
         // Validated here so a bad retention setting fails at startup, not at the first purge.
         DataRetentionService.ReadPolicy(configuration);
         services.AddHostedService<DataRetentionService>();
+        // Apple Health through an iOS Shortcut (personal install): a short key fails at startup.
+        AIFitnessCoach.Api.Endpoints.ShortcutEndpoints.ValidateConfiguration(configuration);
         // Personal install without Sign in with Apple: off unless a long secret code is set.
         var personalAccessCode = configuration["Auth:PersonalAccessCode"];
         if (string.IsNullOrWhiteSpace(personalAccessCode))

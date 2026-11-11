@@ -91,7 +91,8 @@ struct DashboardView: View {
                         viewModel.refresh()
                     }
                     .disabled(viewModel.summaryState == .loading
-                        || viewModel.connectionState != .connected)
+                        || (viewModel.connectionState != .connected
+                            && !DashboardViewModel.usesShortcutHealthData))
                 }
                 if showsCoach {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -207,6 +208,7 @@ struct DashboardView: View {
             }
             .onAppear {
                 AppTelemetry.shared.track("screen_view", ["screen": "dashboard"])
+                viewModel.loadShortcutSummary()
                 engagementViewModel?.load()
                 openPendingDestination()
             }
@@ -232,7 +234,9 @@ struct DashboardView: View {
                         .foregroundStyle(Brand.gradient)
                 }
             }
-            if viewModel.connectionState == .notConnected {
+            if DashboardViewModel.usesShortcutHealthData {
+                shortcutNotice
+            } else if viewModel.connectionState == .notConnected {
                 Button {
                     // Explicit consent first (GDPR), then Apple's permission sheet.
                     if consents.isGranted(.healthData) {
@@ -315,8 +319,34 @@ struct DashboardView: View {
         .brandCard()
     }
 
+    /// Personal build: Apple Health arrives through the "Enviar Salud a AI Coach" Shortcut.
+    private var shortcutNotice: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Tus datos de Salud llegan con el Atajo", systemImage: "square.2.layers.3d")
+                .font(.headline)
+            Text("Ejecuta el atajo «Enviar Salud a AI Coach» (o deja que lo haga la automatización) y pulsa Actualizar. Si no ves datos, comprueba que el atajo terminó sin errores.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            if viewModel.summaryState == .loading {
+                ProgressView("Cargando tu resumen…")
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .brandCard()
+    }
+
     @ViewBuilder
     private var connectionNotice: some View {
+        if DashboardViewModel.usesShortcutHealthData {
+            EmptyView()
+        } else {
+            healthConnectionNotice
+        }
+    }
+
+    @ViewBuilder
+    private var healthConnectionNotice: some View {
         switch viewModel.connectionState {
         case .unavailable:
             Label(

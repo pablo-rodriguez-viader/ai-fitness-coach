@@ -21,6 +21,8 @@ services:
       Beta__MaxUsers: ${BETA_MAX_USERS:-0}
       # Free install without Sign in with Apple: secret code (24+ characters) to open your account.
       Auth__PersonalAccessCode: ${PERSONAL_ACCESS_CODE:-}
+      # Apple Health through an iOS Shortcut (free install, no HealthKit): secret key, 32+ characters.
+      Shortcuts__IngestKey: ${SHORTCUT_INGEST_KEY:-}
       Release__Environment: ${RELEASE_ENVIRONMENT:-beta}
       Apple__TeamId: ${APPLE_TEAM_ID:-}
       Apple__KeyId: ${APPLE_SIGN_IN_KEY_ID:-}

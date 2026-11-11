@@ -46,6 +46,7 @@ public static class ApiEndpoints
         endpoints.MapEngagementEndpoints();
         endpoints.MapReleaseEndpoints();
         endpoints.MapConsentEndpoints();
+        endpoints.MapShortcutEndpoints();
         return endpoints;
     }
 
