@@ -8,11 +8,12 @@ struct AuthenticationView: View {
     var body: some View {
         VStack(spacing: 24) {
             OfflineBanner(message: "Sin conexión. Necesitas internet para iniciar sesión.")
-            Image(systemName: "figure.run")
-                .font(.system(size: 52))
-                .foregroundStyle(.tint)
+            Spacer(minLength: 0)
+            BrandLogo(size: 120)
+                .shadow(color: Brand.teal.opacity(0.35), radius: 24)
             Text("AI Fitness Coach")
                 .font(.largeTitle.bold())
+                .foregroundStyle(Brand.gradient)
             Text("Inicia sesión para asociar tus datos de salud a tu cuenta.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -49,8 +50,11 @@ struct AuthenticationView: View {
                     .foregroundStyle(Color.errorText)
                     .multilineTextAlignment(.center)
             }
+            Spacer(minLength: 0)
         }
         .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Brand.canvas.ignoresSafeArea())
     }
 
     /// Personal build (free Apple ID): the code set as PERSONAL_ACCESS_CODE on your backend.
@@ -63,14 +67,14 @@ struct AuthenticationView: View {
                 .submitLabel(.go)
                 .onSubmit { Task { await viewModel.signInWithAccessCode() } }
                 .padding(12)
-                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                .brandCard(cornerRadius: 12)
                 .accessibilityHint("El código configurado en tu servidor")
             Button {
                 Task { await viewModel.signInWithAccessCode() }
             } label: {
-                Text("Entrar").frame(maxWidth: .infinity, minHeight: 44)
+                Text("Entrar")
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.brand)
             .disabled(viewModel.isSigningIn
                 || viewModel.accessCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Text("Instalación personal: usa el código de acceso de tu servidor.")

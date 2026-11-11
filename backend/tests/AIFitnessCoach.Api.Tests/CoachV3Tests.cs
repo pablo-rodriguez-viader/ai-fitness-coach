@@ -334,6 +334,29 @@ public sealed class CoachV3Tests
         Assert.Contains("recommendationEffectiveness", client.LastPrompt, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task WorkoutGenerationPassesUserNeedsAsDataAndAsksForSpanish()
+    {
+        var day = WorkoutDay.Create(DateOnly.FromDateTime(Now.UtcDateTime).AddDays(-1), "Session", "", []);
+        var previousPlan = WorkoutPlan.Create("user-1", "general_health", day.Date, day.Date, [day], Now.AddDays(-2));
+        var client = new CapturingOpenAIClient(
+            """{"goal":"general_health","days":[{"title":"Sesión","recoveryNote":"","exercises":[{"name":"Sentadilla","sets":"3","repetitions":"8","durationMinutes":20,"restSeconds":60,"instructions":null}]}]}""");
+        var service = new WorkoutService(
+            new TestContextSource(),
+            client,
+            new TestWorkoutRepository(previousPlan, []),
+            new FixedTimeProvider(Now));
+
+        await service.GeneratePlanAsync(
+            "user-1", "general_health", 1, CancellationToken.None, needs: "Principiante, me duele la rodilla");
+
+        Assert.Contains("\"userNeeds\":\"Principiante, me duele la rodilla\"", client.LastPrompt, StringComparison.Ordinal);
+        Assert.Contains("Spanish", client.LastPrompt, StringComparison.Ordinal);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.GeneratePlanAsync(
+            "user-1", "general_health", 1, CancellationToken.None,
+            needs: new string('a', WorkoutService.MaximumNeedsLength + 1)));
+    }
+
     private static void AddMetric(
         ICollection<AIHealthMetricContext> metrics,
         string type,

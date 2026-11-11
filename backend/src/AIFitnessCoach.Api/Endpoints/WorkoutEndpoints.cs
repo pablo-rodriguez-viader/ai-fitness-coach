@@ -55,7 +55,8 @@ public static class WorkoutEndpoints
         if (request is null || string.IsNullOrWhiteSpace(request.Goal)
             || !WorkoutGoal.Supported.Contains(request.Goal) || request.Days is < 1 or > 7
             || request.AvailableMinutes is < 10 or > 180
-            || request.Equipment?.Count > 8)
+            || request.Equipment?.Count > 8
+            || request.Needs?.Length > WorkoutService.MaximumNeedsLength)
             return NoStore(Results.ValidationProblem(new Dictionary<string, string[]>
             {
                 ["request"] = ["A supported goal and a duration from 1 to 7 days are required."]
@@ -66,7 +67,8 @@ public static class WorkoutEndpoints
             var plan = await useCase.ExecuteAsync(
                 userId,
                 new AIFitnessCoach.AI.Contracts.WorkoutPlanRequest(
-                    request.Goal, request.Days, request.AvailableMinutes, request.Equipment),
+                    request.Goal, request.Days, request.AvailableMinutes, request.Equipment,
+                    string.IsNullOrWhiteSpace(request.Needs) ? null : request.Needs.Trim()),
                 cancellationToken);
             await analytics.RecordAsync(
                 userId,

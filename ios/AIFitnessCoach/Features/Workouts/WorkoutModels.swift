@@ -5,6 +5,8 @@ struct WorkoutPlanRequest: Encodable, Sendable {
     let days: Int
     let availableMinutes: Int
     let equipment: [String]
+    /// Level, injuries and preferences in the user's words; nil when empty.
+    let needs: String?
 }
 
 struct WorkoutFeedbackRequest: Encodable, Sendable {

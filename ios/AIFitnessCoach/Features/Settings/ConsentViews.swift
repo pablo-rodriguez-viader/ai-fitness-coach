@@ -93,7 +93,7 @@ struct AnalyticsConsentCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
     }
 
     private func decide(_ granted: Bool) {

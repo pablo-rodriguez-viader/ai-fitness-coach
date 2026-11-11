@@ -388,6 +388,9 @@ struct AIFitnessCoachApp: App {
                             ?? dependencies.sessionManager.errorMessage)
                 }
             }
+            // Brand look (Core/Theme.swift): always dark, lime accents like the logo.
+            .preferredColorScheme(.dark)
+            .tint(Brand.lime)
             .environmentObject(dependencies.networkMonitor)
             .environmentObject(dependencies.deepLinkRouter)
             .environmentObject(dependencies.appConfig)

@@ -10,7 +10,10 @@ services:
       Apple__Audience: ${APPLE_AUDIENCE:?Set APPLE_AUDIENCE to the iOS bundle id}
       AI__Enabled: ${AI_ENABLED:-false}
       Analytics__AdminApiKey: ${ANALYTICS_ADMIN_API_KEY:-}
-      AI__ApiKey: ${OPENAI_API_KEY:-}
+      # Any OpenAI-compatible API. Gemini: AI_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/openai/
+      AI__Endpoint: ${AI_ENDPOINT:-https://api.openai.com/v1/}
+      AI__ApiKey: ${AI_API_KEY:-${OPENAI_API_KEY:-}}
+      AI__MaxOutputTokens: ${AI_MAX_OUTPUT_TOKENS:-800}
       AI__Model: ${AI_MODEL:-gpt-4o-mini}
       AI__InputCostPerMillionTokens: ${AI_INPUT_COST_PER_MILLION_TOKENS:-0}
       AI__OutputCostPerMillionTokens: ${AI_OUTPUT_COST_PER_MILLION_TOKENS:-0}

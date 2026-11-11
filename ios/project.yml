@@ -29,6 +29,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
         INFOPLIST_FILE: AIFitnessCoach/Resources/Info.plist
+        # Icon from Gemini (Resources/Assets.xcassets/AppIcon.appiconset, one 1024 px image).
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         PRODUCT_NAME: AI Fitness Coach
         # PRODUCT_NAME has spaces; tests import the module as AIFitnessCoach.
         PRODUCT_MODULE_NAME: AIFitnessCoach

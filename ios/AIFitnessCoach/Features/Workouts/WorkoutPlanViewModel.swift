@@ -15,6 +15,9 @@ final class WorkoutPlanViewModel: ObservableObject {
     @Published var selectedGoal: WorkoutGoal = .generalHealth
     @Published var availableMinutes = 45
     @Published var availableEquipment: Set<String> = ["Bodyweight"]
+    /// Free text for the AI: level, injuries, preferences (max 500 characters, like the server).
+    @Published var needs = ""
+    static let maximumNeedsLength = 500
 
     enum FeedbackState: Equatable {
         case sending
@@ -53,6 +56,11 @@ final class WorkoutPlanViewModel: ObservableObject {
         }
     }
 
+    static func trimmedNeeds(_ text: String) -> String? {
+        let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(maximumNeedsLength))
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     private static func message(for error: Error) -> String {
         error.appErrorKind == .failure ? error.localizedDescription : error.userMessage
     }
@@ -70,7 +78,8 @@ final class WorkoutPlanViewModel: ObservableObject {
                     goal: selectedGoal,
                     days: days,
                     availableMinutes: availableMinutes,
-                    equipment: Array(availableEquipment).sorted())
+                    equipment: Array(availableEquipment).sorted(),
+                    needs: Self.trimmedNeeds(needs))
                 plan = generatedPlan
                 errorMessage = nil
                 feedbackMessage = nil

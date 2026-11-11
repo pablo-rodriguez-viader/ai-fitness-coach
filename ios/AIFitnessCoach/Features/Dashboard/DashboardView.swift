@@ -68,7 +68,7 @@ struct DashboardView: View {
                 }
                 .padding()
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .background(Brand.canvas)
             .navigationTitle("AI Fitness Coach")
             .toolbar {
                 if sessionManager != nil {
@@ -221,11 +221,17 @@ struct DashboardView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(Date.now.formatted(date: .complete, time: .omitted))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text("Tu resumen de hoy")
-                .font(.largeTitle.bold())
+            HStack(spacing: 14) {
+                BrandLogo(size: 52)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Date.now.formatted(date: .complete, time: .omitted))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("Tu resumen de hoy")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(Brand.gradient)
+                }
+            }
             if viewModel.connectionState == .notConnected {
                 Button {
                     // Explicit consent first (GDPR), then Apple's permission sheet.
@@ -238,7 +244,7 @@ struct DashboardView: View {
                     Label("Conectar Apple Health", systemImage: "heart.text.square")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.brand)
                 .accessibilityHint("Abre la hoja de permisos de Salud")
                 // Shown before the system sheet: what is read, why, and that it is read only.
                 Text("Solo leemos pasos, energía, frecuencia cardiaca, peso, sueño y entrenamientos para tu resumen, tu progreso y tus objetivos. No escribimos en Salud ni usamos estos datos para publicidad. Puedes cambiar el permiso en Ajustes › Salud.")
@@ -282,7 +288,7 @@ struct DashboardView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
         .accessibilityElement(children: .contain)
     }
 
@@ -306,7 +312,7 @@ struct DashboardView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
     }
 
     @ViewBuilder
@@ -397,7 +403,7 @@ struct DashboardView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
     }
 
     private func metricCard(
@@ -408,18 +414,27 @@ struct DashboardView: View {
         icon: String
     ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: icon)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.onAccent)
+                    .frame(width: 30, height: 30)
+                    .background(Brand.gradient, in: Circle())
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
             Text(value.map { String(format: format, $0) } ?? "—")
-                .font(.title2.bold())
+                .font(.system(.title, design: .rounded).bold())
+                .monospacedDigit()
             Text(value == nil ? "Sin datos disponibles" : unit)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 105, alignment: .leading)
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
     }
 
     private func signOut() {
@@ -536,7 +551,7 @@ private struct EngagementCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
     }
 }
 

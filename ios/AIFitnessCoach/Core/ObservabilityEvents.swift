@@ -8,7 +8,14 @@ enum ObservabilityEvents {
 
     static func healthKitAuthorization(outcome: String, error: Error? = nil) {
         var properties = ["outcome": outcome]
-        if let error { properties.merge(errorProperties(error)) { $1 } }
+        if let error {
+            properties.merge(errorProperties(error)) { $1 }
+            // HealthKit's own text (e.g. "Missing com.apple.developer.healthkit entitlement")
+            // tells signing problems apart from a user refusal. It never contains health values.
+            if (error as NSError).domain == "com.apple.healthkit" {
+                properties["reason"] = String(error.localizedDescription.prefix(120))
+            }
+        }
         AppTelemetry.shared.track("healthkit_authorization", properties)
     }
 

@@ -15,7 +15,7 @@ struct AchievementsView: View {
                 }
                 .padding()
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .background(Brand.canvas)
             .navigationTitle("Logros")
             .toolbar { SheetCloseButton(dismiss: dismiss) }
             .refreshable { viewModel.load() }
@@ -32,7 +32,7 @@ struct AchievementsView: View {
         case (_, .some(let summary)):
             StreakView(streak: summary.streak)
                 .padding()
-                .background(.background, in: RoundedRectangle(cornerRadius: 16))
+                .brandCard()
             Text("\(summary.unlockedAchievements) de \(summary.achievements.count) logros desbloqueados")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -83,7 +83,7 @@ struct AchievementsView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
         .opacity(achievement.unlocked ? 1 : 0.85)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(achievement.unlocked

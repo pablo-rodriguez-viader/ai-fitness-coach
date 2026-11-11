@@ -34,6 +34,24 @@ struct WorkoutPlanView: View {
                                 else { viewModel.availableEquipment.remove(option.id) }
                             }))
                     }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Cuéntale al coach qué necesitas")
+                            .font(.subheadline.weight(.semibold))
+                        TextField(
+                            "Ej.: principiante, me molesta la rodilla, quiero ganar fuerza en piernas",
+                            text: $viewModel.needs,
+                            axis: .vertical)
+                            .lineLimit(3...6)
+                            .onChange(of: viewModel.needs) { _, newValue in
+                                if newValue.count > WorkoutPlanViewModel.maximumNeedsLength {
+                                    viewModel.needs = String(newValue.prefix(WorkoutPlanViewModel.maximumNeedsLength))
+                                }
+                            }
+                        Text("Nivel, lesiones o molestias, preferencias… La IA adapta la rutina a esto.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
                     Button {
                         viewModel.generate()
                     } label: {
@@ -43,6 +61,8 @@ struct WorkoutPlanView: View {
                             Label("Generar plan semanal", systemImage: "sparkles")
                         }
                     }
+                    .buttonStyle(.brand)
+                    .listRowBackground(Color.clear)
                     .disabled(viewModel.isGenerating)
                     Button {
                         viewModel.generate(days: 1)

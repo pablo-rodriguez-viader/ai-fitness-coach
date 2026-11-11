@@ -6,7 +6,8 @@ public sealed record WorkoutPlanRequest(
     string Goal,
     int Days = 7,
     int AvailableMinutes = 45,
-    IReadOnlyList<string>? Equipment = null);
+    IReadOnlyList<string>? Equipment = null,
+    string? Needs = null);
 
 public sealed record WorkoutFeedbackRequest(
     Guid WorkoutDayId,

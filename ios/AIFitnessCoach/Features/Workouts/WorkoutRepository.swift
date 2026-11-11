@@ -48,7 +48,8 @@ actor WorkoutRepository {
                 goal: goal.rawValue,
                 days: days,
                 availableMinutes: availableMinutes,
-                equipment: equipment)),
+                equipment: equipment,
+                needs: needs)),
             as: WorkoutPlan.self)
     }
 

@@ -15,7 +15,8 @@ public sealed class GenerateWorkoutPlanUseCase(WorkoutService service)
             request.Days,
             cancellationToken,
             request.AvailableMinutes,
-            request.Equipment);
+            request.Equipment,
+            request.Needs);
 }
 
 public sealed class GenerateDailyWorkoutUseCase(WorkoutService service)

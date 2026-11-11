@@ -26,7 +26,7 @@ struct CoachView: View {
                 conversation
                 composer
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .background(Brand.canvas)
             .navigationTitle("AI Coach")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -165,7 +165,7 @@ struct CoachView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
     }
 
     private var introduction: some View {
@@ -184,7 +184,7 @@ struct CoachView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .brandCard()
     }
 
     private var suggestions: some View {
