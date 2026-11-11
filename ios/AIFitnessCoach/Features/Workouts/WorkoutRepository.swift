@@ -39,7 +39,8 @@ actor WorkoutRepository {
         goal: WorkoutGoal,
         days: Int,
         availableMinutes: Int = 45,
-        equipment: [String] = ["Bodyweight"]
+        equipment: [String] = ["Bodyweight"],
+        needs: String? = nil
     ) async throws -> WorkoutPlan {
         try await send(
             path: "api/v1/workouts/generate",
