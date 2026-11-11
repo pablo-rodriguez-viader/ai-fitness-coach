@@ -17,8 +17,7 @@ targets:
     platform: iOS
     sources:
       - path: AIFitnessCoach
-    info:
-      path: AIFitnessCoach/Resources/Info.plist
+    # Not `info:`: XcodeGen would regenerate the plist and drop our keys (APIBaseURL, Health usage).
     entitlements:
       path: AIFitnessCoach/Resources/AIFitnessCoach.entitlements
     configFiles:
@@ -29,6 +28,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
+        INFOPLIST_FILE: AIFitnessCoach/Resources/Info.plist
         PRODUCT_NAME: AI Fitness Coach
         # PRODUCT_NAME has spaces; tests import the module as AIFitnessCoach.
         PRODUCT_MODULE_NAME: AIFitnessCoach

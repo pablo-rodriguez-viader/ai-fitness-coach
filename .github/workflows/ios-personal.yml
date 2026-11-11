@@ -73,6 +73,11 @@ jobs:
         run: |
           APP="$(find build/dd/Build/Products/Personal-iphoneos -maxdepth 1 -name '*.app' | head -1)"
           [[ -d "$APP" ]] || { echo "::error::App bundle not found"; exit 1; }
+          # The app refuses to start without these keys ("Backend no configurado").
+          BUILT_URL="$(/usr/libexec/PlistBuddy -c 'Print :APIBaseURL' "$APP/Info.plist" 2>/dev/null || true)"
+          [[ "$BUILT_URL" == "${{ inputs.api_base_url }}" ]] || { echo "::error::Info.plist APIBaseURL is '$BUILT_URL', expected '${{ inputs.api_base_url }}'"; exit 1; }
+          /usr/libexec/PlistBuddy -c 'Print :NSHealthShareUsageDescription' "$APP/Info.plist" >/dev/null \
+            || { echo "::error::Info.plist is missing NSHealthShareUsageDescription"; exit 1; }
           # Ad-hoc signature carrying the HealthKit entitlement; Sideloadly re-signs it with your Apple ID.
           codesign --force --sign - \
             --entitlements AIFitnessCoach/Resources/AIFitnessCoach.Personal.entitlements "$APP"
