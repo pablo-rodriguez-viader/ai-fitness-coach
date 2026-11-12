@@ -44,8 +44,8 @@ public sealed class ReleaseCandidateTests
         Assert.Equal(503, rejected.StatusCode);
         Assert.Equal(callsWhenOpened, handler.Calls);
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(1), "An open circuit must fail fast.");
-        // Each request retried once inside OpenAIClient: 2 requests x 2 attempts.
-        Assert.Equal(4, callsWhenOpened);
+        // Each request retried twice inside OpenAIClient: 2 requests x 3 attempts.
+        Assert.Equal(6, callsWhenOpened);
     }
 
     [Fact]

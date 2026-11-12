@@ -137,13 +137,13 @@ public sealed class BetaRegressionTests
     public async Task AIProviderPersistentOutageFailsAfterTheRetryBudget()
     {
         var handler = new SequenceHandler(
-            HttpStatusCode.BadGateway, HttpStatusCode.BadGateway, HttpStatusCode.OK);
+            HttpStatusCode.BadGateway, HttpStatusCode.BadGateway, HttpStatusCode.BadGateway, HttpStatusCode.OK);
         var client = CreateOpenAIClient(handler);
 
         var exception = await Assert.ThrowsAsync<AIProviderException>(() =>
             client.CompleteAsync([new AIChatPromptMessage("user", "hola")], CancellationToken.None));
 
-        Assert.Equal(2, handler.Calls);
+        Assert.Equal(3, handler.Calls);
         Assert.Equal(502, exception.StatusCode);
     }
 

@@ -5,11 +5,15 @@ using System.Text.Json.Serialization;
 using AIFitnessCoach.AI.Abstractions;
 using AIFitnessCoach.AI.Configuration;
 using AIFitnessCoach.AI.Contracts;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AIFitnessCoach.Infrastructure.AI;
 
-public sealed class OpenAIClient(HttpClient httpClient, IOptions<AIOptions> options) : IOpenAIClient
+public sealed class OpenAIClient(
+    HttpClient httpClient,
+    IOptions<AIOptions> options,
+    ILogger<OpenAIClient>? logger = null) : IOpenAIClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -29,6 +33,42 @@ public sealed class OpenAIClient(HttpClient httpClient, IOptions<AIOptions> opti
         CancellationToken cancellationToken)
     {
         var configuration = options.Value;
+        try
+        {
+            return await CompleteWithModelAsync(messages, jsonMode, configuration.Model, cancellationToken);
+        }
+        catch (AIProviderException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger?.LogWarning(
+                "AI provider failed with model {Model}: {Reason} (HTTP {Status}).",
+                configuration.Model, exception.Message, exception.StatusCode);
+            var fallback = configuration.FallbackModel?.Trim();
+            // Free tiers (Gemini) answer 429 or 503 when busy; a second model usually still has room.
+            if (string.IsNullOrEmpty(fallback)
+                || string.Equals(fallback, configuration.Model, StringComparison.Ordinal)
+                || exception.StatusCode is not (429 or >= 500))
+                throw;
+            try
+            {
+                return await CompleteWithModelAsync(messages, jsonMode, fallback, cancellationToken);
+            }
+            catch (AIProviderException fallbackException) when (!cancellationToken.IsCancellationRequested)
+            {
+                logger?.LogWarning(
+                    "AI fallback model {Model} also failed: {Reason} (HTTP {Status}).",
+                    fallback, fallbackException.Message, fallbackException.StatusCode);
+                throw;
+            }
+        }
+    }
+
+    private async Task<AIChatCompletion> CompleteWithModelAsync(
+        IReadOnlyList<AIChatPromptMessage> messages,
+        bool jsonMode,
+        string model,
+        CancellationToken cancellationToken)
+    {
+        var configuration = options.Value;
         if (!configuration.Enabled || string.IsNullOrWhiteSpace(configuration.ApiKey))
             throw new AIProviderException("AI provider is not configured.");
 
@@ -37,7 +77,7 @@ public sealed class OpenAIClient(HttpClient httpClient, IOptions<AIOptions> opti
             : configuration.Endpoint + "/";
         var endpoint = new Uri(new Uri(baseAddress, UriKind.Absolute), "chat/completions");
         var body = JsonSerializer.Serialize(new OpenAIRequest(
-            configuration.Model,
+            model,
             messages,
             configuration.MaxOutputTokens,
             jsonMode ? new OpenAIResponseFormat("json_object") : null), JsonOptions);
@@ -76,7 +116,7 @@ public sealed class OpenAIClient(HttpClient httpClient, IOptions<AIOptions> opti
             }
             return new AIChatCompletion(
                 content,
-                payload.Model ?? options.Value.Model,
+                payload.Model ?? model,
                 payload.Usage.PromptTokens,
                 payload.Usage.CompletionTokens);
         }
@@ -94,10 +134,10 @@ public sealed class OpenAIClient(HttpClient httpClient, IOptions<AIOptions> opti
         }
     }
 
-    private const int MaximumAttempts = 2;
+    private const int MaximumAttempts = 3;
 
     /// <summary>
-    /// Sends the completion request, retrying once on rate limiting, provider 5xx or a failed
+    /// Sends the completion request, retrying twice on rate limiting, provider 5xx or a failed
     /// connection. Everything shares the caller's 60-second budget.
     /// </summary>
     private async Task<HttpResponseMessage> SendWithRetryAsync(
@@ -146,9 +186,9 @@ public sealed class OpenAIClient(HttpClient httpClient, IOptions<AIOptions> opti
         statusCode is 429 or 500 or 502 or 503 or 504;
 
     private static TimeSpan RetryDelay(int attempt, TimeSpan? retryAfter) =>
-        retryAfter is { } delay && delay >= TimeSpan.Zero && delay <= TimeSpan.FromSeconds(5)
+        retryAfter is { } delay && delay >= TimeSpan.Zero && delay <= TimeSpan.FromSeconds(10)
             ? delay
-            : TimeSpan.FromMilliseconds(750 * attempt);
+            : TimeSpan.FromMilliseconds(1500 * attempt);
 
     private sealed record OpenAIRequest(
         string Model,

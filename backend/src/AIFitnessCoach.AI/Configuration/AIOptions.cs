@@ -7,6 +7,8 @@ public sealed class AIOptions
     public bool Enabled { get; set; }
     public string ApiKey { get; set; } = string.Empty;
     public string Model { get; set; } = "gpt-4o-mini";
+    /// <summary>Optional second model, used when the first one is rate limited or overloaded.</summary>
+    public string? FallbackModel { get; set; }
     public string Endpoint { get; set; } = "https://api.openai.com/v1/";
     public int MaxOutputTokens { get; set; } = 800;
     public int ConversationHistoryMessages { get; set; } = 12;
