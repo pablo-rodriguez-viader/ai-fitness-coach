@@ -50,6 +50,7 @@ public static class WorkoutEndpoints
         ICurrentUser currentUser,
         [FromServices] GenerateWorkoutPlanUseCase useCase,
         [FromServices] IProductEventRecorder analytics,
+        [FromServices] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (request is null || string.IsNullOrWhiteSpace(request.Goal)
@@ -79,6 +80,8 @@ public static class WorkoutEndpoints
         }
         catch (AIProviderException exception)
         {
+            loggerFactory.CreateLogger("WorkoutGeneration").LogWarning(
+                "Workout generation failed: {Reason} (HTTP {Status}).", exception.Message, exception.StatusCode);
             return NoStore(Results.Problem(
                 title: "Workout generation is temporarily unavailable.",
                 statusCode: exception.StatusCode is null or StatusCodes.Status429TooManyRequests

@@ -134,38 +134,21 @@ public sealed class WorkoutService(
             {{JsonSerializer.Serialize(structuredContext, JsonOptions)}}
             {{planner.BuildCatalogPrompt(planningInput, goal, days)}}
             """;
-        var completion = await openAIClient.CompleteAsync(
-            [new AIChatPromptMessage("system", prompt), new AIChatPromptMessage("user", "Generate my workout plan.")],
-            cancellationToken);
-        var document = DeserializePlan(completion.Content);
-        if (!IsValidPlanDocument(document, goal, days))
-            throw new AIProviderException("The AI provider returned an invalid workout plan.");
-
-        var documentWithCatalogIds = document with
+        // Small free models sometimes return a plan that breaks the catalog or safety rules;
+        // asking again usually gives a valid one.
+        WorkoutPlanDocument document = null!;
+        WorkoutPlanDraft draft = null!;
+        for (var attempt = 1; ; attempt++)
         {
-            Days = document.Days.Select(day => day with
+            try
             {
-                Exercises = day.Exercises.Select(exercise =>
-                    catalog.TryResolve(exercise.ExerciseId, exercise.Name, out var catalogExercise)
-                        ? exercise with { ExerciseId = catalogExercise.Id, Name = catalogExercise.Name }
-                        : exercise).ToArray()
-            }).ToArray()
-        };
-        var draft = new WorkoutPlanDraft(document.Goal, documentWithCatalogIds.Days.Select(day => new WorkoutDayDraft(
-            day.Title,
-            day.RecoveryNote,
-            day.Exercises.Select(exercise => new WorkoutExerciseDraft(
-                exercise.ExerciseId,
-                exercise.Name,
-                exercise.Sets,
-                exercise.Repetitions,
-                exercise.DurationMinutes,
-                exercise.RestSeconds,
-                exercise.Instructions)).ToArray())).ToArray());
-        draft = validator.Correct(draft, planningInput);
-        var validation = validator.Validate(draft, goal, days, planningInput);
-        if (!validation.IsValid)
-            throw new AIProviderException(validation.Error ?? "Workout plan failed safety validation.");
+                (document, draft) = await GenerateValidDraftAsync(prompt, goal, days, planningInput, catalog, validator, cancellationToken);
+                break;
+            }
+            catch (AIProviderException exception) when (exception.StatusCode is null && attempt < MaximumPlanAttempts)
+            {
+            }
+        }
 
         var consecutiveRestDays = DaysSinceLastWorkout(context.RecentMetrics, now);
         var positiveOutcomes = recommendationSignals.Any(item => item.OutcomeCount >= 2 && item.AverageScore >= 0.75);
@@ -392,6 +375,52 @@ public sealed class WorkoutService(
         int.TryParse(repetitions, out var count) && count > 1
             ? Math.Max(1, (int)Math.Floor(count * 0.8)).ToString()
             : repetitions;
+
+    private const int MaximumPlanAttempts = 3;
+
+    private async Task<(WorkoutPlanDocument Document, WorkoutPlanDraft Draft)> GenerateValidDraftAsync(
+        string prompt,
+        string goal,
+        int days,
+        WorkoutPlanningInput planningInput,
+        ExerciseCatalog catalog,
+        WorkoutSafetyValidator validator,
+        CancellationToken cancellationToken)
+    {
+        var completion = await openAIClient.CompleteAsync(
+            [new AIChatPromptMessage("system", prompt), new AIChatPromptMessage("user", "Generate my workout plan.")],
+            cancellationToken);
+        var document = DeserializePlan(completion.Content);
+        if (!IsValidPlanDocument(document, goal, days))
+            throw new AIProviderException("The AI provider returned an invalid workout plan.");
+
+        var documentWithCatalogIds = document with
+        {
+            Days = document.Days.Select(day => day with
+            {
+                Exercises = day.Exercises.Select(exercise =>
+                    catalog.TryResolve(exercise.ExerciseId, exercise.Name, out var catalogExercise)
+                        ? exercise with { ExerciseId = catalogExercise.Id, Name = catalogExercise.Name }
+                        : exercise).ToArray()
+            }).ToArray()
+        };
+        var draft = new WorkoutPlanDraft(document.Goal, documentWithCatalogIds.Days.Select(day => new WorkoutDayDraft(
+            day.Title,
+            day.RecoveryNote,
+            day.Exercises.Select(exercise => new WorkoutExerciseDraft(
+                exercise.ExerciseId,
+                exercise.Name,
+                exercise.Sets,
+                exercise.Repetitions,
+                exercise.DurationMinutes,
+                exercise.RestSeconds,
+                exercise.Instructions)).ToArray())).ToArray());
+        draft = validator.Prune(validator.Correct(draft, planningInput), goal, planningInput);
+        var validation = validator.Validate(draft, goal, days, planningInput);
+        if (!validation.IsValid)
+            throw new AIProviderException(validation.Error ?? "Workout plan failed safety validation.");
+        return (document, draft);
+    }
 
     private static bool IsValidPlanDocument(WorkoutPlanDocument document, string goal, int days) =>
         document.Days is not null

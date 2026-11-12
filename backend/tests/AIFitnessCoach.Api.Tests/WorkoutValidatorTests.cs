@@ -65,6 +65,24 @@ public sealed class WorkoutValidatorTests
         Assert.True(validator.Validate(corrected, "general_health", 1, input).IsValid);
     }
 
+    [Fact]
+    public void PruneDropsOnlyTheExercisesThatBreakTheRules()
+    {
+        var catalog = new ExerciseCatalog();
+        var validator = new WorkoutSafetyValidator(catalog, new WorkoutRuleEngine());
+        var input = WorkoutPlannerTests.Input(new HashSet<ExerciseEquipment> { ExerciseEquipment.Bodyweight }, 60, 7, 0.8);
+        var draft = Draft(
+            new WorkoutExerciseDraft("bodyweight-squat", "Sentadilla", "3", "10", 8, 60, null),
+            new WorkoutExerciseDraft("wall-sit", "Sentadilla isométrica en pared", "2", "10", 8, 60, null),
+            new WorkoutExerciseDraft("custom-id", "Burpees extremos", "8", "50", 40, 10, null));
+
+        var pruned = validator.Prune(draft, "general_health", input);
+
+        var exercise = Assert.Single(Assert.Single(pruned.Days).Exercises);
+        Assert.Equal("bodyweight-squat", exercise.ExerciseId);
+        Assert.True(validator.Validate(pruned, "general_health", 1, input).IsValid);
+    }
+
     private static WorkoutPlanDraft Draft(params WorkoutExerciseDraft[] exercises) =>
         new("general_health", [new WorkoutDayDraft("Sesión", "", exercises)]);
 }

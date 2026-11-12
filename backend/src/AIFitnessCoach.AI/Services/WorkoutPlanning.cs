@@ -172,6 +172,52 @@ public sealed class WorkoutSafetyValidator(ExerciseCatalog catalog, WorkoutRuleE
         };
     }
 
+    /// <summary>
+    /// Drops the exercises that would fail validation (outside the catalog, not eligible, repeated
+    /// muscle group, over the time budget) instead of rejecting the whole plan. Removing exercises
+    /// only makes a plan lighter, so the result stays within the safety rules.
+    /// </summary>
+    public WorkoutPlanDraft Prune(WorkoutPlanDraft draft, string expectedGoal, WorkoutPlanningInput input)
+    {
+        if (draft.Days is null)
+            return draft;
+        var allowedIds = new WorkoutPlanner(catalog).SelectExercises(input, expectedGoal)
+            .Select(exercise => exercise.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return draft with
+        {
+            Days = draft.Days.Select(day =>
+            {
+                if (day.Exercises is null)
+                    return day;
+                var kept = new List<WorkoutExerciseDraft>();
+                var seenMuscles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var minutes = 0;
+                foreach (var item in day.Exercises.Take(WorkoutRuleEngine.MaximumExercisesPerDay))
+                {
+                    if (!catalog.TryResolve(item.ExerciseId, item.Name, out var exercise)
+                        || !allowedIds.Contains(exercise.Id)
+                        || exercise.Equipment.Any(equipment => !input.AvailableEquipment.Contains(equipment))
+                        || exercise.Restrictions.Contains("running") && input.AverageSleepHours is < 6
+                        || !ruleEngine.IsIntensityAllowed(item, exercise, input)
+                        || item.RestSeconds is < WorkoutRuleEngine.MinimumRestSeconds or > WorkoutRuleEngine.MaximumRestSeconds)
+                        continue;
+                    if (exercise.Category == ExerciseCategory.Strength && seenMuscles.Contains(exercise.MuscleGroup))
+                        continue;
+                    var sets = int.TryParse(item.Sets, out var setCount) ? setCount : 1;
+                    var restMinutes = item.RestSeconds is { } rest ? (rest * Math.Max(0, sets - 1)) / 60 : 0;
+                    var itemMinutes = Math.Max(item.DurationMinutes ?? 0, exercise.EstimatedMinutes * sets + restMinutes);
+                    if (minutes + itemMinutes > input.AvailableMinutes)
+                        continue;
+                    if (exercise.Category == ExerciseCategory.Strength)
+                        seenMuscles.Add(exercise.MuscleGroup);
+                    minutes += itemMinutes;
+                    kept.Add(item with { ExerciseId = exercise.Id, Name = exercise.Name });
+                }
+                return day with { Exercises = kept.ToArray() };
+            }).ToArray()
+        };
+    }
+
     public (bool IsValid, string? Error) Validate(
         WorkoutPlanDraft draft,
         string expectedGoal,
